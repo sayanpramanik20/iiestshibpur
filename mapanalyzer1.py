@@ -47,12 +47,35 @@ def nearest_node(lat, lon):
     return min(coords, key=lambda n: (coords[n][0] - lat) ** 2 + (coords[n][1] - lon) ** 2)
 
 
+# -: Extra road names added :-
+extra_roads_file = os.path.join(folder, "extra_roads.csv")
+if os.path.exists(extra_roads_file):
+    rdf = pd.read_csv(extra_roads_file).dropna(subset=["name"])
+    for (u, v) in edges:
+        mla = (coords[u][0] + coords[v][0]) / 2
+        mlo = (coords[u][1] + coords[v][1]) / 2
+        for r in rdf.itertuples():
+            if dist_m(mla, mlo, r.lat, r.lon) < 30:
+                road_of[(u, v)] = str(r.name)
+                break
+
+
+
 # -: Named places :-
 place_pts = []
 places_file = os.path.join(folder, "places.csv")
 if os.path.exists(places_file):
     pdf = pd.read_csv(places_file).dropna(subset=["name"])
     place_pts = [(str(r.name), r.lat, r.lon) for r in pdf.itertuples()]
+
+
+# -: Extra places added :-
+extra_places_file = os.path.join(folder, "extra_places.csv")
+if os.path.exists(extra_places_file):
+    xdf = pd.read_csv(extra_places_file).dropna(subset=["name"])
+    place_pts += [(str(r.name), r.lat, r.lon) for r in xdf.itertuples()]
+
+
 
 # one entry per place name -> nearest road node
 place_list = sorted({nm: nearest_node(la, lo) for nm, la, lo in place_pts}.items())
