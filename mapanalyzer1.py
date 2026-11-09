@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 
 INF = float("inf")
-folder = os.path.dirname(os.path.abspath(__file__))
+folder = os.path.dirname(os.path.abspath(__file__))     #dynamicaly search the location of this mapanalyzer1.py file in the compuiter.
 
 # -: Load dataset :-
 nodes_df = pd.read_csv(os.path.join(folder, "nodes.csv"))
@@ -19,30 +19,32 @@ coords = {int(r.node_id): (r.lat, r.lon) for r in nodes_df.itertuples()}
 
 _len = {}
 road_of = {}
-for r in edges_df.itertuples():
+for r in edges_df.itertuples(): # traverse every row in the dataset
     u, v = int(r.from_node), int(r.to_node)
     if u != v and u in coords and v in coords:
-        if (u, v) not in _len or r.length_m < _len[(u, v)]:
+        if (u, v) not in _len or r.length_m < _len[(u, v)]: #for parallel edges : save shortest distance
             _len[(u, v)] = float(r.length_m)
             nm = getattr(r, "road_name", "") if has_names else ""
             road_of[(u, v)] = nm if isinstance(nm, str) else ""
 
 edges = list(_len.keys())                 # edge i = (u, v)
 length = [_len[e] for e in edges]         # real road length in metres
-edge_id = {e: i for i, e in enumerate(edges)}
+edge_id = {e: i for i, e in enumerate(edges)}       # enumerate() : loops through a list and automatically keeps track of thge index for each the edges.
 
-adj = {n: [] for n in coords}
+adj = {n: [] for n in coords}   #adjacency list.
 for u, v in edges:
     adj[u].append(v)
 
 
-# -: Geometry helpers :-
+# dist_m Geometry helper function :- 
+# to calculating the staright line distances (in meters) between two locations on the map
 def dist_m(lat1, lon1, lat2, lon2):
-    dy = (lat1 - lat2) * 111000
+    dy = (lat1 - lat2) * 111000              # widest gap between logitudes and distance between latitudes = 111 km on earth
     dx = (lon1 - lon2) * 111000 * math.cos(math.radians(lat1))
-    return math.hypot(dx, dy)
+    return math.hypot(dx, dy)   #return hypotenuous
 
 
+#finds the exact node / location on my map that is physically closest to a 'taken input latitude and longitude'.
 def nearest_node(lat, lon):
     return min(coords, key=lambda n: (coords[n][0] - lat) ** 2 + (coords[n][1] - lon) ** 2)
 
@@ -68,6 +70,7 @@ if os.path.exists(places_file):
     pdf = pd.read_csv(places_file).dropna(subset=["name"])
     place_pts = [(str(r.name), r.lat, r.lon) for r in pdf.itertuples()]
 
+# dropna: drops any rows missing names.
 
 # -: Extra places added :-
 extra_places_file = os.path.join(folder, "extra_places.csv")
